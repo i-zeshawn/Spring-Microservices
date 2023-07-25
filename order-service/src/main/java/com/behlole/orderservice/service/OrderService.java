@@ -33,6 +33,7 @@ public class OrderService {
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtoList()
                 .stream().map(this::mapToDTO).toList();
         order.setOrderLineItemsList(orderLineItems);
+
         List<String> skuCodes = order
                 .getOrderLineItemsList()
                 .stream()
@@ -41,7 +42,7 @@ public class OrderService {
          * Call Inventory Service if product is in stock
          */
         InventoryDto[] inventoryResponseArray = webClient.get()
-                .uri("http://localhost:8082/api/inventory", uriBuilder ->
+                .uri("http://127.0.0.1:8082/api/inventory", uriBuilder ->
                         uriBuilder.queryParam("skuCode", skuCodes).build()
                 )
                 .retrieve()

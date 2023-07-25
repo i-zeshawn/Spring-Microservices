@@ -17,14 +17,14 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<InventoryDto> isInStock(List<String> skuCode) {
-        return inventoryRepository.findBySkuCodeIn(skuCode).stream().map(this::convertToInventoryDTO).toList();
-    }
-
-    private InventoryDto convertToInventoryDTO(Inventory inventory) {
-        return InventoryDto
-                .builder()
-                .skuCode(inventory.getSkuCode())
-                .isInStock(inventory.getQuantity() > 0)
-                .build();
+        List<InventoryDto> inventoryDtos= inventoryRepository.findBySkuCodeIn(skuCode).stream().map(inventory ->
+                InventoryDto
+                        .builder()
+                        .skuCode(inventory.getSkuCode())
+                        .isInStock(inventory.getQuantity() > 0)
+                        .build()
+        ).toList();
+        System.out.println(inventoryDtos);
+        return inventoryDtos;
     }
 }
