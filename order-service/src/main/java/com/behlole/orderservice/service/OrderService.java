@@ -1,5 +1,6 @@
 package com.behlole.orderservice.service;
 
+import com.behlole.orderservice.dto.InventoryDto;
 import com.behlole.orderservice.dto.OrderLineItemsDto;
 import com.behlole.orderservice.dto.OrderRequest;
 import com.behlole.orderservice.model.Order;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,15 +33,24 @@ public class OrderService {
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtoList()
                 .stream().map(this::mapToDTO).toList();
         order.setOrderLineItemsList(orderLineItems);
+        List<String> skuCodes = order
+                .getOrderLineItemsList()
+                .stream()
+                .map(OrderLineItems::getSkuCode).toList();
         /**
          * Call Inventory Service if product is in stock
          */
-        Boolean result = webClient.get()
-                .uri("http://localhost:8082/api/inventory")
+        InventoryDto[] inventoryResponseArray = webClient.get()
+                .uri("http://localhost:8082/api/inventory", uriBuilder ->
+                        uriBuilder.queryParam("skuCode", skuCodes).build()
+                )
                 .retrieve()
-                .bodyToMono(Boolean.class)
+                .bodyToMono(InventoryDto[].class)
                 .block();
-        if (Boolean.TRUE.equals(result))
+        assert inventoryResponseArray != null;
+        boolean allProductsIsInStock = Arrays.stream(inventoryResponseArray)
+                .allMatch(InventoryDto::getIsInStock);
+        if (allProductsIsInStock)
             orderRepository.save(order);
         else
             throw new IllegalArgumentException("Product is not in stock");
